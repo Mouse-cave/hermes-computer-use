@@ -143,6 +143,16 @@ def test_winuia() -> None:
     print(f"[OK] winuia: {out}")
 
 
+def test_wait_stable() -> None:
+    import time as _t
+    t = _t.perf_counter()
+    elapsed, ok = desktop.wait_until_stable(timeout=3.0)
+    real = _t.perf_counter() - t
+    assert isinstance(elapsed, float) and isinstance(ok, bool)
+    assert real <= 3.6, "不应超时太多"
+    print(f"[OK] wait_stable: 稳定={ok} 用时={elapsed:.2f}s (上限3s)")
+
+
 def test_targets() -> None:
     from hermes_computer_use import targets as targets_mod
     title = ""
@@ -182,7 +192,7 @@ def test_tools_registered() -> None:
         "list_windows", "get_active_window", "activate_window",
         "minimize_window", "maximize_window",
         "win_list_apps", "win_inspect", "win_invoke", "win_set_text", "win_capture",
-        "win_wake_accessibility", "targets", "tap", "fill",
+        "win_wake_accessibility", "targets", "tap", "fill", "wait_stable",
     }
     missing = expected - names
     assert not missing, f"缺少工具：{missing}"
@@ -200,6 +210,7 @@ def main() -> None:
     test_environment()
     test_window()
     test_winuia()
+    test_wait_stable()
     test_targets()
     test_ocr()
     test_tools_registered()

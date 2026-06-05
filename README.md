@@ -101,7 +101,8 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 | `scroll` | 滚轮（正=上，负=下） |
 | `type_text` | 在焦点处输入文本（含危险命令拦截，可 `force`） |
 | `press_key` | 按键 / 组合键（`enter`、`ctrl+c`…，黑名单拦截，可 `force`） |
-| `cursor_position` / `wait` | 查光标位置 / 等待加载 |
+| `cursor_position` / `wait` | 查光标位置 / 等待固定秒数 |
+| `wait_stable` | 轮询到界面稳定即返回（替代写死 `wait`，更省时） |
 
 **窗口管理**
 | 工具 | 作用 |

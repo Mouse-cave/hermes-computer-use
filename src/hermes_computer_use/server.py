@@ -101,12 +101,21 @@ def move_mouse(x: int, y: int) -> str:
     return f"鼠标已移动到 view({x},{y}) → 实际 logical({lx},{ly})。"
 
 
+def _settle_suffix(settle: bool) -> str:
+    """settle=True 时动作后轮询等界面稳定，返回中文后缀。"""
+    if not settle:
+        return ""
+    elapsed, ok = desktop.wait_until_stable(timeout=4.0)
+    return f" 界面{'已稳定' if ok else '仍在变化'}（{elapsed:.2f}s）。"
+
+
 @mcp.tool()
-def click(x: int, y: int, button: str = "left") -> str:
-    """在截图坐标 (x, y) 单击。button 可选 left/right/middle，默认 left。"""
+def click(x: int, y: int, button: str = "left", settle: bool = False) -> str:
+    """在截图坐标 (x, y) 单击。button 可选 left/right/middle，默认 left。
+    settle=True 则点击后轮询等界面稳定（适合点击会触发加载的按钮）。"""
     safety.gate()
     lx, ly = desktop.click(x, y, button=button, clicks=1)
-    return f"已在 view({x},{y}) → logical({lx},{ly}) 处 {button} 键单击。"
+    return f"已在 view({x},{y}) → logical({lx},{ly}) 处 {button} 键单击。" + _settle_suffix(settle)
 
 
 @mcp.tool()
@@ -155,18 +164,19 @@ def type_text(text: str, force: bool = False) -> str:
 
 
 @mcp.tool()
-def press_key(keys: str, force: bool = False) -> str:
+def press_key(keys: str, force: bool = False, settle: bool = False) -> str:
     """按下按键或组合键。
 
     示例：'enter'、'esc'、'tab'、'backspace'、'ctrl+c'、'ctrl+v'、
     'alt+f4'、'ctrl+shift+esc'。用 '+' 连接组合键。
     安全：黑名单内的系统级快捷键会被拦截，确认安全可传 force=true。
+    settle=True 则按键后轮询等界面稳定（适合按 Enter 触发搜索/提交）。
     """
     parsed = desktop._normalize_keys(keys)
     safety.check_hotkey(parsed, force=force)
     safety.gate()
     desktop.press_key(keys)
-    return f"已按下：{' + '.join(parsed)}"
+    return f"已按下：{' + '.join(parsed)}" + _settle_suffix(settle)
 
 
 @mcp.tool()
@@ -181,6 +191,14 @@ def wait(seconds: float = 1.0) -> str:
     """等待若干秒，用于等界面加载/动画结束。受上限保护（默认最多 30 秒）。"""
     actual = desktop.wait(seconds)
     return f"已等待 {actual:.2f} 秒。"
+
+
+@mcp.tool()
+def wait_stable(timeout: float = 5.0) -> str:
+    """轮询截图直到界面稳定或超时——**优先用它替代写死的 wait**：界面响应快就早返回，更省时间。"""
+    elapsed, ok = desktop.wait_until_stable(timeout=timeout)
+    return (f"界面已稳定，等待 {elapsed:.2f}s。" if ok
+            else f"超时 {elapsed:.2f}s，界面仍在变化（可能持续加载/动画）。")
 
 
 # ===========================================================================
@@ -340,18 +358,20 @@ def targets(title: str = "", max_items: int = 200) -> str:
 
 
 @mcp.tool()
-def tap(id: int) -> str:
-    """点击 targets 列出的【编号目标】。自动回退：UIA无光标 → 消息坐标 → 视觉坐标(会移动光标)。"""
+def tap(id: int, settle: bool = False) -> str:
+    """点击 targets 列出的【编号目标】。自动回退：UIA无光标 → 消息坐标 → 视觉坐标(会移动光标)。
+    settle=True 则点击后轮询等界面稳定。"""
     safety.gate()
-    return targets_mod.tap(id)
+    return targets_mod.tap(id) + _settle_suffix(settle)
 
 
 @mcp.tool()
-def fill(id: int, text: str, force: bool = False) -> str:
-    """往 targets 的【编号目标】填文本。优先 UIA 无光标；含危险文本拦截(可 force)。"""
+def fill(id: int, text: str, force: bool = False, settle: bool = False) -> str:
+    """往 targets 的【编号目标】填文本。优先 UIA 无光标；含危险文本拦截(可 force)。
+    settle=True 则填入后轮询等界面稳定。"""
     safety.check_text(text, force=force)
     safety.gate()
-    return targets_mod.fill(id, text)
+    return targets_mod.fill(id, text) + _settle_suffix(settle)
 
 
 def main() -> None:

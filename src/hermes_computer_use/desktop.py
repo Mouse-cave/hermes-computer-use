@@ -206,3 +206,40 @@ def wait(seconds: float) -> float:
     capped = max(0.0, min(seconds, config.max_action_delay))
     time.sleep(capped)
     return capped
+
+
+def _settle_sig(region: dict | None):
+    """抓一帧灰度缩略图用于稳定性比较（仅用 PIL，无 numpy 依赖）。"""
+    with mss.mss() as sct:
+        monitor = region or sct.monitors[0 if config.multi_monitor else 1]
+        raw = sct.grab(monitor)
+    return (PILImage.frombytes("RGB", raw.size, raw.rgb)
+            .convert("L").resize((80, 80), PILImage.BILINEAR))
+
+
+def wait_until_stable(timeout: float = 5.0, stable_for: float = 0.35,
+                      poll: float = 0.12, threshold: float = 2.0,
+                      region: dict | None = None) -> tuple[float, bool]:
+    """轮询截图直到界面稳定（连续 stable_for 秒无明显变化）或超时。
+
+    用于替代写死的 sleep——界面响应快就早返回，省时间。
+    返回 (实际耗时秒, 是否在超时前稳定)。
+    """
+    from PIL import ImageChops, ImageStat
+
+    timeout = max(0.2, min(timeout, config.max_action_delay))
+    start = time.monotonic()
+    prev = _settle_sig(region)
+    last_change = start
+    while True:
+        time.sleep(poll)
+        now = time.monotonic()
+        cur = _settle_sig(region)
+        diff = ImageStat.Stat(ImageChops.difference(cur, prev)).mean[0]
+        prev = cur
+        if diff > threshold:
+            last_change = now
+        if now - last_change >= stable_for:
+            return now - start, True
+        if now - start >= timeout:
+            return now - start, False
