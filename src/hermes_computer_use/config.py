@@ -66,6 +66,9 @@ class Config:
     # Windows 元素级后端
     overlay_enabled: bool = _get_bool("HCU_OVERLAY", True)
 
+    # 多显示器（实验性，opt-in）：开启后截图覆盖整个虚拟桌面、坐标跨屏。默认仅主屏。
+    multi_monitor: bool = _get_bool("HCU_MULTI_MONITOR", False)
+
 
 # 进程级单例：服务启动时读取一次环境变量
 config = Config()

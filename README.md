@@ -139,6 +139,7 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 | `HCU_BLOCK_DANGEROUS_TEXT` | `true` | 拦截疑似破坏性命令的输入文本（rm -rf、DROP TABLE…） |
 | `HCU_BLOCKED_HOTKEYS` | `ctrl+alt+delete` | 危险快捷键黑名单，逗号分隔 |
 | `HCU_OVERLAY` | `true` | Windows 元素级操作时的「假鼠标」指针覆盖层（纯视觉提示）开关 |
+| `HCU_MULTI_MONITOR` | `false` | 实验性：开启后截图覆盖整个虚拟桌面、坐标跨屏；默认仅主屏 |
 
 ## 安全须知
 
@@ -149,7 +150,7 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 
 ## 当前限制（MVP）
 
-- 仅操作**主显示器**（多屏支持待加）。
+- 默认仅操作**主显示器**；多屏可 `HCU_MULTI_MONITOR=true` 开启（实验性，跨屏截图+坐标；混合 DPI 下可能有偏差）。
 - OCR 运行在降采样后的视图截图上，极小字体可能漏识；必要时把 `HCU_MAX_WIDTH` 调大或设 0。
 - 窗口管理依赖 pygetwindow，Windows 功能完整，macOS/Linux 支持有限（不支持时工具会返回提示）。
 - 浏览器/文件/命令行复用 Hermes 自带工具，本项目不重复造。

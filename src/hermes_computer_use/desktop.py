@@ -58,32 +58,42 @@ class ScreenGeometry:
     view_width: int      # 返回给模型的截图尺寸（模型坐标空间）
     view_height: int
     scale: float         # view = logical * scale
+    origin_x: int = 0    # 逻辑坐标原点（多显示器虚拟桌面下可能为负；主屏模式为 0）
+    origin_y: int = 0
 
 
 def get_geometry() -> ScreenGeometry:
-    """根据当前主屏逻辑分辨率与 max_width 配置，算出 view/logical 几何与缩放比。"""
-    logical_w, logical_h = pyautogui.size()
+    """算出 view/logical 几何、缩放比与原点偏移。多显示器模式覆盖整个虚拟桌面。"""
+    if config.multi_monitor:
+        with mss.mss() as sct:
+            vm = sct.monitors[0]  # 所有显示器的包围盒（left/top 可能为负）
+        origin_x, origin_y = int(vm["left"]), int(vm["top"])
+        logical_w, logical_h = int(vm["width"]), int(vm["height"])
+    else:
+        origin_x = origin_y = 0
+        logical_w, logical_h = pyautogui.size()
     if config.max_width and logical_w > config.max_width:
         scale = config.max_width / logical_w
     else:
         scale = 1.0
     view_w = max(1, round(logical_w * scale))
     view_h = max(1, round(logical_h * scale))
-    return ScreenGeometry(logical_w, logical_h, view_w, view_h, scale)
+    return ScreenGeometry(logical_w, logical_h, view_w, view_h, scale, origin_x, origin_y)
 
 
 def _to_logical(x: float, y: float, geo: ScreenGeometry) -> tuple[int, int]:
     """模型坐标(view 空间) → 真实操作坐标(logical 空间)，并夹紧到屏幕范围内。"""
-    lx = int(round(x / geo.scale))
-    ly = int(round(y / geo.scale))
-    lx = min(max(lx, 0), geo.logical_width - 1)
-    ly = min(max(ly, 0), geo.logical_height - 1)
+    lx = geo.origin_x + int(round(x / geo.scale))
+    ly = geo.origin_y + int(round(y / geo.scale))
+    lx = min(max(lx, geo.origin_x), geo.origin_x + geo.logical_width - 1)
+    ly = min(max(ly, geo.origin_y), geo.origin_y + geo.logical_height - 1)
     return lx, ly
 
 
 def _to_view(lx: float, ly: float, geo: ScreenGeometry) -> tuple[int, int]:
     """真实坐标(logical) → 模型坐标(view)，用于回报光标位置。"""
-    return int(round(lx * geo.scale)), int(round(ly * geo.scale))
+    return (int(round((lx - geo.origin_x) * geo.scale)),
+            int(round((ly - geo.origin_y) * geo.scale)))
 
 
 def logical_to_view(lx: float, ly: float) -> tuple[int, int]:
@@ -95,7 +105,8 @@ def capture_png() -> tuple[bytes, ScreenGeometry]:
     """抓取主屏并编码为 PNG（已对齐到 view 空间）。返回 (png_bytes, 几何信息)。"""
     geo = get_geometry()
     with mss.mss() as sct:
-        monitor = sct.monitors[1]  # [0] 是所有屏幕的包围盒，[1] 是主屏
+        # [0] 是所有屏幕的包围盒（多显示器模式），[1] 是主屏
+        monitor = sct.monitors[0 if config.multi_monitor else 1]
         raw = sct.grab(monitor)
     img = PILImage.frombytes("RGB", raw.size, raw.rgb)
     # 一步到位：物理像素 → view 空间。坐标映射只由 scale 定义，与物理分辨率无关。
