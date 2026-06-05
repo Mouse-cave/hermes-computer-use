@@ -103,8 +103,10 @@ def test_environment() -> None:
     assert info["gui_available"] is True, "本机有桌面，gui_available 应为 True"
     assert info["screen"] is not None and info["verdict"]
     assert isinstance(info["ocr_available"], bool)
-    print(f"[OK] environment: os={info['os']} gui={info['gui_available']} "
-          f"ocr={info['ocr_available']} win={info['window_management_available']}")
+    assert info["ecosystem"] in ("Windows", "macOS", "Linux")
+    assert isinstance(info["in_container"], bool) and isinstance(info["is_wsl"], bool)
+    print(f"[OK] environment: ecosystem={info['ecosystem']} container={info['in_container']} "
+          f"gui={info['gui_available']} ocr={info['ocr_available']} win={info['window_management_available']}")
 
 
 def test_window() -> None:
