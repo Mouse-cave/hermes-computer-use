@@ -56,6 +56,8 @@ class Config:
     pause: float = _get_float("HCU_PAUSE", 0.1)
     typing_interval: float = _get_float("HCU_TYPING_INTERVAL", 0.0)
     max_action_delay: float = _get_float("HCU_MAX_ACTION_DELAY", 30.0)
+    # OCR 在原始分辨率截图上识别（小字更准），坐标映射回 view。关掉则在降采样图上跑(更快)。
+    ocr_fullres: bool = _get_bool("HCU_OCR_FULLRES", True)
 
     # 安全护栏
     safety_enabled: bool = _get_bool("HCU_SAFETY", True)

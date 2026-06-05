@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP, Image
 
-from . import desktop, environment, ocr, safety, window, winuia
+from . import desktop, environment, hints, ocr, safety, window, winuia
 from . import targets as targets_mod
 
 mcp = FastMCP("hermes-computer-use")
@@ -194,6 +194,7 @@ def list_windows() -> str:
     if not wins:
         return "未发现可见窗口。"
     lines = [f"共 {len(wins)} 个窗口："]
+    any_browser = False
     for w in wins:
         flags = []
         if w["active"]:
@@ -201,7 +202,12 @@ def list_windows() -> str:
         if w["minimized"]:
             flags.append("最小化")
         tag = f"[{'/'.join(flags)}] " if flags else ""
-        lines.append(f'- {tag}"{w["title"]}"  size={w["size"]} pos={w["pos"]}')
+        mark = "  🌐浏览器" if hints.is_browser_window(w["title"]) else ""
+        if mark:
+            any_browser = True
+        lines.append(f'- {tag}"{w["title"]}"  size={w["size"]} pos={w["pos"]}{mark}')
+    if any_browser:
+        lines.append(hints.BROWSER_HINT)
     return "\n".join(lines)
 
 
@@ -250,8 +256,14 @@ def win_list_apps() -> str:
     if not apps:
         return "未发现可连接窗口。"
     lines = [f"共 {len(apps)} 个窗口："]
+    any_browser = False
     for a in apps:
-        lines.append(f'- "{a["title"]}"  [{a["control_type"]}]')
+        mark = "  🌐浏览器" if hints.is_browser_window(a["title"]) else ""
+        if mark:
+            any_browser = True
+        lines.append(f'- "{a["title"]}"  [{a["control_type"]}]{mark}')
+    if any_browser:
+        lines.append(hints.BROWSER_HINT)
     return "\n".join(lines)
 
 
@@ -315,7 +327,10 @@ def targets(title: str = "", max_items: int = 200) -> str:
     if not items:
         return "未枚举到可操作目标。"
     src_label = {"uia": "UIA", "ocr": "OCR"}
-    lines = [f"共 {len(items)} 个目标（用 #编号 调 tap/fill）："]
+    lines = []
+    if title and hints.is_browser_window(title):
+        lines.append("⚠️ " + hints.BROWSER_HINT)
+    lines.append(f"共 {len(items)} 个目标（用 #编号 调 tap/fill）：")
     for t in items:
         lines.append(
             f'#{t["id"]} [{src_label[t["source"]]}·{t["control_type"]}] '

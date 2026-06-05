@@ -101,14 +101,20 @@ def logical_to_view(lx: float, ly: float) -> tuple[int, int]:
     return _to_view(lx, ly, get_geometry())
 
 
-def capture_png() -> tuple[bytes, ScreenGeometry]:
-    """抓取主屏并编码为 PNG（已对齐到 view 空间）。返回 (png_bytes, 几何信息)。"""
+def capture_native() -> tuple["PILImage.Image", ScreenGeometry]:
+    """抓取原始分辨率截图（PIL Image，物理像素）+ 几何。供 OCR 全分辨率识别。"""
     geo = get_geometry()
     with mss.mss() as sct:
         # [0] 是所有屏幕的包围盒（多显示器模式），[1] 是主屏
         monitor = sct.monitors[0 if config.multi_monitor else 1]
         raw = sct.grab(monitor)
     img = PILImage.frombytes("RGB", raw.size, raw.rgb)
+    return img, geo
+
+
+def capture_png() -> tuple[bytes, ScreenGeometry]:
+    """抓取主屏并编码为 PNG（已对齐到 view 空间）。返回 (png_bytes, 几何信息)。"""
+    img, geo = capture_native()
     # 一步到位：物理像素 → view 空间。坐标映射只由 scale 定义，与物理分辨率无关。
     if img.size != (geo.view_width, geo.view_height):
         img = img.resize((geo.view_width, geo.view_height), PILImage.LANCZOS)

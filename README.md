@@ -130,6 +130,7 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 | 变量 | 默认 | 说明 |
 |---|---|---|
 | `HCU_MAX_WIDTH` | `1280` | 截图最大宽度；屏幕更宽时按比例降采样（省 token、提精度）。`0`=不缩放 |
+| `HCU_OCR_FULLRES` | `true` | OCR 在原始分辨率图上识别（小字更准），坐标映射回 view；`false` 则在降采样图上跑（更快） |
 | `HCU_FAILSAFE` | `true` | 鼠标甩到屏幕左上角立即急停 |
 | `HCU_PAUSE` | `0.1` | 每个动作后的固定停顿（秒） |
 | `HCU_TYPING_INTERVAL` | `0.0` | 逐字符输入间隔（秒），丢字就调大 |

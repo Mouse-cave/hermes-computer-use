@@ -13,6 +13,7 @@ from __future__ import annotations
 import io
 
 from . import desktop
+from .config import config
 
 _engine = None
 _import_error: Exception | None = None
@@ -38,14 +39,25 @@ def _get_engine():
 
 
 def ocr_screen() -> list[dict]:
-    """对当前主屏做 OCR。返回 [{text, center:[x,y], score}]，坐标为 view 空间像素。"""
+    """对当前主屏做 OCR。返回 [{text, center:[x,y], score}]，坐标为 view 空间像素。
+
+    默认在**原始分辨率**截图上识别（小字更准），再把坐标按比例映射回 view；
+    HCU_OCR_FULLRES=off 则直接在降采样的 view 图上识别（更快、省内存）。
+    """
     engine = _get_engine()
-    png, _geo = desktop.capture_png()
-
     import numpy as np
-    from PIL import Image as PILImage
 
-    img = PILImage.open(io.BytesIO(png)).convert("RGB")
+    if config.ocr_fullres:
+        img, geo = desktop.capture_native()
+        nw, nh = img.size
+        rx = (geo.view_width / nw) if nw else 1.0   # 原图坐标 → view 坐标 的缩放比
+        ry = (geo.view_height / nh) if nh else 1.0
+    else:
+        from PIL import Image as PILImage
+        png, geo = desktop.capture_png()
+        img = PILImage.open(io.BytesIO(png)).convert("RGB")
+        rx = ry = 1.0
+
     result, _ = engine(np.array(img))
 
     items: list[dict] = []
@@ -54,8 +66,8 @@ def ocr_screen() -> list[dict]:
     for box, text, score in result:
         xs = [p[0] for p in box]
         ys = [p[1] for p in box]
-        cx = int(round(sum(xs) / len(xs)))
-        cy = int(round(sum(ys) / len(ys)))
+        cx = int(round(sum(xs) / len(xs) * rx))
+        cy = int(round(sum(ys) / len(ys) * ry))
         items.append({"text": text, "center": [cx, cy], "score": round(float(score), 3)})
     return items
 
