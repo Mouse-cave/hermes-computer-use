@@ -235,6 +235,45 @@ def capture_window(title: str) -> bytes:
     return buf.getvalue()
 
 
+def message_click(title: str, screen_x: int, screen_y: int) -> str:
+    """【best-effort】向窗口发 WM_LBUTTONDOWN/UP 消息坐标点击，不移动真实光标。
+
+    对响应合成鼠标消息的传统控件有效；很多现代/自绘程序会忽略——失败应回退视觉坐标。
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    spec = _connect(title)
+    hwnd = spec.wrapper_object().handle
+    user32 = ctypes.windll.user32
+    pt = wintypes.POINT(int(screen_x), int(screen_y))
+    if not user32.ScreenToClient(wintypes.HWND(hwnd), ctypes.byref(pt)):
+        raise RuntimeError("ScreenToClient 失败。")
+    lparam = ((pt.y & 0xFFFF) << 16) | (pt.x & 0xFFFF)
+    WM_LBUTTONDOWN, WM_LBUTTONUP, MK_LBUTTON = 0x0201, 0x0202, 0x0001
+    user32.PostMessageW(wintypes.HWND(hwnd), WM_LBUTTONDOWN, MK_LBUTTON, lparam)
+    user32.PostMessageW(wintypes.HWND(hwnd), WM_LBUTTONUP, 0, lparam)
+    return f"已向窗口客户区 ({pt.x},{pt.y}) 发送点击消息（未移动真实鼠标）。"
+
+
+def wake_accessibility(title: str) -> str:
+    """唤醒 Chromium/Electron 的无障碍树：访问其 Document 元素以触发 UIA 树构建。
+
+    很多 Electron 应用默认不暴露控件树，被 UIA 客户端"看一眼"后才构建。失败无副作用。
+    """
+    try:
+        spec = _connect(title)
+        docs = [d for d in spec.descendants() if d.element_info.control_type == "Document"]
+        for d in docs[:3]:
+            try:
+                _ = d.element_info.name  # 触碰一下，促使其构建子树
+            except Exception:
+                continue
+        return f"已尝试唤醒「{title}」的无障碍树（Document×{len(docs)}）。"
+    except Exception as exc:  # noqa: BLE001
+        return f"唤醒无障碍树失败：{exc}"
+
+
 def _describe(wrapper, action: str) -> str:
     try:
         info = wrapper.element_info

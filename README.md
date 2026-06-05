@@ -73,6 +73,13 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 
 ## 工具清单
 
+**统一「编号目标」入口（推荐）** —— 一套接口，UIA/OCR 两种来源透明，执行自动回退
+| 工具 | 作用 |
+|---|---|
+| `targets` | 枚举可操作目标并**编号**：Windows 窗口优先 UIA 控件(不抢鼠标)，否则 OCR 文字 |
+| `tap` | 点击 #编号目标，自动回退 **UIA无光标 → 消息坐标 → 视觉坐标** |
+| `fill` | 往 #编号目标填文本，优先 UIA 无光标（含危险文本拦截） |
+
 **视觉 / 信息**
 | 工具 | 作用 |
 |---|---|
@@ -110,6 +117,7 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 | `win_invoke` | 无光标调用控件（点按钮/菜单/勾选） |
 | `win_set_text` | 无光标往输入框填文本（含危险文本拦截） |
 | `win_capture` | 后台截取指定窗口（PrintWindow） |
+| `win_wake_accessibility` | 唤醒 Chromium/Electron 程序的无障碍树（之后才能枚举其控件） |
 
 > 对标 Hermes macOS cua-driver，填 Windows 空白：通过 UI Automation 按元素操作 + 后台截图，
 > **不移动你的真鼠标、不抢焦点**；操作时「假鼠标」滑到目标 + 红框高亮，仍可观测。

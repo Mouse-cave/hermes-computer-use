@@ -143,6 +143,22 @@ def test_winuia() -> None:
     print(f"[OK] winuia: {out}")
 
 
+def test_targets() -> None:
+    from hermes_computer_use import targets as targets_mod
+    title = ""
+    try:
+        apps = winuia.list_apps()
+        if apps:
+            title = apps[0]["title"]
+    except Exception:
+        pass
+    items = targets_mod.build(title)
+    assert isinstance(items, list)
+    assert all(it["id"] == i for i, it in enumerate(items)), "目标编号应连续"
+    srcs = {it["source"] for it in items}
+    print(f"[OK] targets: 枚举 {len(items)} 个目标（来源={srcs or '空'}，窗口='{title}'）")
+
+
 def test_ocr() -> None:
     try:
         import rapidocr_onnxruntime  # noqa: F401
@@ -166,6 +182,7 @@ def test_tools_registered() -> None:
         "list_windows", "get_active_window", "activate_window",
         "minimize_window", "maximize_window",
         "win_list_apps", "win_inspect", "win_invoke", "win_set_text", "win_capture",
+        "win_wake_accessibility", "targets", "tap", "fill",
     }
     missing = expected - names
     assert not missing, f"缺少工具：{missing}"
@@ -183,6 +200,7 @@ def main() -> None:
     test_environment()
     test_window()
     test_winuia()
+    test_targets()
     test_ocr()
     test_tools_registered()
     print("\n[ALL PASSED] 全部冒烟测试通过")

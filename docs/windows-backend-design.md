@@ -159,9 +159,11 @@ Target = {
 
 ## 13. 里程碑（建议分步落地）
 
-- **M1（先做）**：`winuia.py` 基础 + `win_inspect`/`win_capture`/`win_invoke`/`win_set_text`，
-  以及 **`overlay.py` 假鼠标指针 + `draw_outline` 高亮**（操作时假光标移到目标 + 红框）。
-  能在你的目标程序上**验证可行性**与可观测效果。
-- **M2**：`targets.py` 统一编号目标 + `targets`/`tap`/`fill` + UIA→视觉回退。
-- **M3**：消息坐标中间层、Electron 无障碍开关、性能优化、多窗口。
+- **M1（✅ 已完成）**：`winuia.py` 基础 + `win_inspect`/`win_capture`/`win_invoke`/`win_set_text`，
+  `overlay.py` 假鼠标指针 + `draw_outline` 高亮。已验证「运行对话框 UIA 填字、真实光标未动」。
+- **M2（✅ 已完成）**：`targets.py` 统一编号目标 + `targets`/`tap`/`fill` + 回退梯子
+  （UIA无光标 → 消息坐标 → 视觉坐标）。已验证 targets.fill 经 UIA 成功、鼠标未动。
+- **M3（🟡 部分完成）**：✅ 消息坐标中间层(`message_click`)、✅ Electron/Chromium 无障碍唤醒
+  (`wake_accessibility`)、✅ 多窗口(按标题连接，含后台窗口)；🔲 **多显示器**（涉及坐标系统改动，
+  单独谨慎进行）、🔲 性能优化(大窗口枚举)。
 ```

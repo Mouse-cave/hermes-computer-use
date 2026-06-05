@@ -86,6 +86,11 @@ def _to_view(lx: float, ly: float, geo: ScreenGeometry) -> tuple[int, int]:
     return int(round(lx * geo.scale)), int(round(ly * geo.scale))
 
 
+def logical_to_view(lx: float, ly: float) -> tuple[int, int]:
+    """逻辑/屏幕坐标 → view 坐标（供统一目标层把 UIA 屏幕坐标转成可点击的 view 坐标）。"""
+    return _to_view(lx, ly, get_geometry())
+
+
 def capture_png() -> tuple[bytes, ScreenGeometry]:
     """抓取主屏并编码为 PNG（已对齐到 view 空间）。返回 (png_bytes, 几何信息)。"""
     geo = get_geometry()

@@ -11,6 +11,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP, Image
 
 from . import desktop, environment, ocr, safety, window, winuia
+from . import targets as targets_mod
 
 mcp = FastMCP("hermes-computer-use")
 
@@ -291,6 +292,51 @@ def win_capture(title: str) -> list:
     """【Windows】后台截取指定窗口（PrintWindow，窗口非前台也可），返回 PNG 图像。"""
     png = winuia.capture_window(title)
     return [f'窗口"{title}"截图：', Image(data=png, format="png")]
+
+
+@mcp.tool()
+def win_wake_accessibility(title: str) -> str:
+    """【Windows】唤醒 Chromium/Electron 程序的无障碍树（之后再 win_inspect/targets 才能枚举到控件）。"""
+    return winuia.wake_accessibility(title)
+
+
+# ===========================================================================
+# 统一「编号目标」入口（推荐）：一套接口，UIA 与 OCR 两种来源对模型透明，
+# 执行自动回退：UIA无光标 → 消息坐标 → 视觉坐标。
+# ===========================================================================
+
+@mcp.tool()
+def targets(title: str = "", max_items: int = 200) -> str:
+    """枚举可操作的【编号目标】。给 Windows 窗口标题优先 UIA 控件(不抢鼠标)，否则用 OCR 文字。
+
+    返回每个目标的 #编号，供 tap / fill 按号操作。
+    """
+    items = targets_mod.build(title, max_items=max_items)
+    if not items:
+        return "未枚举到可操作目标。"
+    src_label = {"uia": "UIA", "ocr": "OCR"}
+    lines = [f"共 {len(items)} 个目标（用 #编号 调 tap/fill）："]
+    for t in items:
+        lines.append(
+            f'#{t["id"]} [{src_label[t["source"]]}·{t["control_type"]}] '
+            f'"{t["name"]}" @view{t["center_view"]}'
+        )
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def tap(id: int) -> str:
+    """点击 targets 列出的【编号目标】。自动回退：UIA无光标 → 消息坐标 → 视觉坐标(会移动光标)。"""
+    safety.gate()
+    return targets_mod.tap(id)
+
+
+@mcp.tool()
+def fill(id: int, text: str, force: bool = False) -> str:
+    """往 targets 的【编号目标】填文本。优先 UIA 无光标；含危险文本拦截(可 force)。"""
+    safety.check_text(text, force=force)
+    safety.gate()
+    return targets_mod.fill(id, text)
 
 
 def main() -> None:
