@@ -14,6 +14,9 @@
 - HCU_RATE_LIMIT          每分钟允许的动作次数上限，防失控循环。0=不限。默认 120。
 - HCU_BLOCK_DANGEROUS_TEXT 是否拦截疑似破坏性命令的输入文本（rm -rf、DROP TABLE…）。默认 true。
 - HCU_BLOCKED_HOTKEYS     危险快捷键黑名单，逗号分隔（如 "ctrl+alt+delete,win+l"）。默认 ctrl+alt+delete。
+
+Windows 元素级后端（winuia.py / overlay.py）：
+- HCU_OVERLAY             "假鼠标"指针覆盖层开关（操作元素时假指针滑到目标，纯视觉提示）。默认 true。
 """
 
 from __future__ import annotations
@@ -59,6 +62,9 @@ class Config:
     rate_limit_per_min: int = _get_int("HCU_RATE_LIMIT", 120)
     block_dangerous_text: bool = _get_bool("HCU_BLOCK_DANGEROUS_TEXT", True)
     blocked_hotkeys: str = os.environ.get("HCU_BLOCKED_HOTKEYS", "ctrl+alt+delete")
+
+    # Windows 元素级后端
+    overlay_enabled: bool = _get_bool("HCU_OVERLAY", True)
 
 
 # 进程级单例：服务启动时读取一次环境变量

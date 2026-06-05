@@ -39,6 +39,9 @@ pip install -e .
 
 # 如需 OCR（按文字定位/点击，含 onnxruntime，体积较大）：
 pip install -e ".[ocr]"
+
+# 如需 Windows 原生「元素级」后端（UIA，操作主机程序不抢鼠标，仅 Windows）：
+pip install -e ".[winuia]"
 ```
 
 ## 接入 Hermes
@@ -99,6 +102,19 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 | `list_windows` / `get_active_window` | 列出窗口 / 查前台窗口 |
 | `activate_window` / `minimize_window` / `maximize_window` | 按标题激活 / 最小化 / 最大化 |
 
+**Windows 原生·元素级（需 `[winuia]`，仅 Windows）** —— 操作主机程序**不抢鼠标**
+| 工具 | 作用 |
+|---|---|
+| `win_list_apps` | 列出可连接的顶层窗口 |
+| `win_inspect` | 枚举窗口控件并**编号**（供按 #号操作） |
+| `win_invoke` | 无光标调用控件（点按钮/菜单/勾选） |
+| `win_set_text` | 无光标往输入框填文本（含危险文本拦截） |
+| `win_capture` | 后台截取指定窗口（PrintWindow） |
+
+> 对标 Hermes macOS cua-driver，填 Windows 空白：通过 UI Automation 按元素操作 + 后台截图，
+> **不移动你的真鼠标、不抢焦点**；操作时「假鼠标」滑到目标 + 红框高亮，仍可观测。
+> 不暴露 UIA 的程序（游戏/自绘/部分 Electron）需回退视觉坐标或 VM。
+
 **坐标系**：所有坐标基于 `screenshot`（与 OCR）返回的像素（左上角原点）。服务自动处理 DPI 与缩放，模型无需自己换算。
 
 ## 配置（环境变量）
@@ -114,6 +130,7 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 | `HCU_RATE_LIMIT` | `120` | 每分钟动作上限，防失控循环；`0`=不限 |
 | `HCU_BLOCK_DANGEROUS_TEXT` | `true` | 拦截疑似破坏性命令的输入文本（rm -rf、DROP TABLE…） |
 | `HCU_BLOCKED_HOTKEYS` | `ctrl+alt+delete` | 危险快捷键黑名单，逗号分隔 |
+| `HCU_OVERLAY` | `true` | Windows 元素级操作时的「假鼠标」指针覆盖层（纯视觉提示）开关 |
 
 ## 安全须知
 

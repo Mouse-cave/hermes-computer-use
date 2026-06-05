@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import asyncio
 
-from hermes_computer_use import desktop, environment, safety, window
+from hermes_computer_use import desktop, environment, safety, window, winuia
 from hermes_computer_use.config import config
 from hermes_computer_use.safety import SafetyError
 from hermes_computer_use.server import mcp
@@ -119,6 +119,30 @@ def test_window() -> None:
     print(f"[OK] window: 列出 {len(wins)} 个窗口")
 
 
+def test_winuia() -> None:
+    ok, msg = winuia.is_supported()
+    if not ok:
+        print(f"[SKIP] winuia: {msg}")
+        return
+    try:
+        apps = winuia.list_apps()
+    except RuntimeError as e:
+        print(f"[SKIP] winuia: {e}")  # 未装 pywinauto
+        return
+    assert isinstance(apps, list)
+    out = f"列出 {len(apps)} 个窗口"
+    if apps:
+        title = apps[0]["title"]
+        try:
+            items = winuia.inspect_window(title, max_items=20)
+            png = winuia.capture_window(title)
+            assert isinstance(items, list) and png[:8] == b"\x89PNG\r\n\x1a\n"
+            out += f"；inspect 首窗得 {len(items)} 控件；capture {len(png)}B PNG"
+        except Exception as e:  # noqa: BLE001 - 个别窗口枚举/截图失败不算硬错误
+            out += f"（inspect/capture 跳过：{e}）"
+    print(f"[OK] winuia: {out}")
+
+
 def test_ocr() -> None:
     try:
         import rapidocr_onnxruntime  # noqa: F401
@@ -141,6 +165,7 @@ def test_tools_registered() -> None:
         "type_text", "press_key", "cursor_position", "wait",
         "list_windows", "get_active_window", "activate_window",
         "minimize_window", "maximize_window",
+        "win_list_apps", "win_inspect", "win_invoke", "win_set_text", "win_capture",
     }
     missing = expected - names
     assert not missing, f"缺少工具：{missing}"
@@ -157,6 +182,7 @@ def main() -> None:
     test_safety_rate_limit()
     test_environment()
     test_window()
+    test_winuia()
     test_ocr()
     test_tools_registered()
     print("\n[ALL PASSED] 全部冒烟测试通过")

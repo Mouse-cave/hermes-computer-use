@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP, Image
 
-from . import desktop, environment, ocr, safety, window
+from . import desktop, environment, ocr, safety, window, winuia
 
 mcp = FastMCP("hermes-computer-use")
 
@@ -235,6 +235,62 @@ def maximize_window(title: str) -> str:
     safety.gate()
     full = window.maximize_window(title)
     return f'已最大化窗口："{full}"。'
+
+
+# ===========================================================================
+# Windows 原生·元素级（UIA，不抢鼠标；需 [winuia]，仅 Windows）
+# 操作时假鼠标滑到目标 + 红框高亮，全程不移动真实光标。
+# ===========================================================================
+
+@mcp.tool()
+def win_list_apps() -> str:
+    """【Windows】列出可连接的顶层窗口（用于挑选要操作的程序）。"""
+    apps = winuia.list_apps()
+    if not apps:
+        return "未发现可连接窗口。"
+    lines = [f"共 {len(apps)} 个窗口："]
+    for a in apps:
+        lines.append(f'- "{a["title"]}"  [{a["control_type"]}]')
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def win_inspect(title: str, control_type: str = "", max_items: int = 200) -> str:
+    """【Windows】枚举窗口内可交互控件并编号，供后续 win_invoke/win_set_text 按编号操作。
+
+    可用 control_type 过滤（如 Button/Edit/MenuItem/CheckBox）。
+    """
+    items = winuia.inspect_window(title, control_type=control_type, max_items=max_items)
+    if not items:
+        return f'窗口"{title}"内未枚举到可交互控件（可能无 UIA 暴露，考虑改用视觉坐标工具）。'
+    lines = [f'窗口"{title}" 控件（按 #编号 用 win_invoke/win_set_text 操作）：']
+    for it in items:
+        aid = f" id={it['automation_id']}" if it.get("automation_id") else ""
+        lines.append(f'#{it["index"]} [{it["control_type"]}] "{it["name"]}"{aid}')
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def win_invoke(title: str, name: str = "", index: int = -1, control_type: str = "") -> str:
+    """【Windows】无光标调用控件（点按钮/菜单项/勾选等）。用 name 或 win_inspect 的 #index 指定。"""
+    safety.gate()
+    return winuia.invoke(title, index=index, name=name, control_type=control_type)
+
+
+@mcp.tool()
+def win_set_text(title: str, text: str, name: str = "", index: int = -1,
+                 control_type: str = "", force: bool = False) -> str:
+    """【Windows】无光标往输入框填文本。用 name 或 #index 指定。含危险命令文本拦截(可 force)。"""
+    safety.check_text(text, force=force)
+    safety.gate()
+    return winuia.set_text(title, text, index=index, name=name, control_type=control_type)
+
+
+@mcp.tool()
+def win_capture(title: str) -> list:
+    """【Windows】后台截取指定窗口（PrintWindow，窗口非前台也可），返回 PNG 图像。"""
+    png = winuia.capture_window(title)
+    return [f'窗口"{title}"截图：', Image(data=png, format="png")]
 
 
 def main() -> None:
