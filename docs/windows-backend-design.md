@@ -167,4 +167,57 @@ Target = {
   (`wake_accessibility`)、✅ 多窗口(按标题连接，含后台窗口)、✅ **多显示器**(opt-in
   `HCU_MULTI_MONITOR`，虚拟桌面截图+跨屏坐标，已验证双屏几何/坐标)；🔲 性能优化(大窗口枚举)、
   🔲 混合 DPI 多屏精确化。
+
+## 14. 实战发现的问题与优化方向（复盘）
+
+> 来源：用 computer use 退出 mimo 网页登录的真实任务复盘。部分为整套栈的共性问题，不止 Windows 后端。
+> 按优先级 P0>P1>P2 排列，每条给出 现象 / 根因 / 优化方法 / 成本。
+
+### P0 ｜ OCR 跑在降采样图上，小字识别差【高价值·易改】
+- 现象：多屏全屏截图被压到 1280 宽(scale 0.25)，页面小字 OCR 读不清，被迫单独高清截屏。
+- 根因：`ocr.ocr_screen()` 用的是 `desktop.capture_png()`（已降采样的 view 图）做识别。
+- 优化：**OCR 改在原始物理像素截图上跑**，识别后把框坐标按 scale 映射回 view 坐标返回。
+  可加 `HCU_OCR_FULLRES` 开关；坐标 ×scale 回 view。
+- 成本：小（约 20 行）。收益：小字/密集界面识别率大幅提升。
+
+### P0 ｜ 网页任务应优先浏览器(DOM)工具，纯视觉更脆【路由】
+- 现象：退网页登录用截图+点击，坐标不确定、需重试；DOM 工具本可直接点 Logout（有 aria-label/role）。
+- 根因：分诊只在 SKILL 文字层，未在"工具返回"里强约束，模型易顺手用 computer use。
+- 优化：`targets`/`win_list_apps`/`check_environment` 检测窗口进程(msedge/chrome/firefox/electron)，
+  在返回里**标注"浏览器窗口 → 建议改用浏览器 DOM 工具"**的 hint；orchestrator 把它升为硬规则。
+- 成本：小（进程名判断 + 文案）。
+
+### P1 ｜ 坐标点击不确定，需"点后验证+重试"【可靠性】
+- 现象：OCR 坐标正确，首次点 Logout 未生效，重试(moveTo+补点)才成功。
+- 根因：视觉点击无明确成败信号（不像 UIA invoke 有返回）；落点边缘/时机/web 元素未就绪。
+- 优化：① 给 `tap`/`click` 加可选 `settle`/`verify`：点击→等界面稳定→截图，必要时重试一次；
+  ② `tap_until(id, expect_text=...)` 点到预期文字出现/消失为止；③ 根因解：能 UIA invoke 就别坐标点。
+- 成本：中。
+
+### P1 ｜ 图标/无文字元素难定位【定位能力】
+- 现象：账号头像是图标，OCR 抓不到，靠"锚文字右侧偏移"+反复 crop 才点中。
+- 根因：纯文字 OCR 对图标无能为力；网页图标无 UIA name。
+- 优化：① 短期 `click_relative(anchor_text, dx, dy)` 把"锚点+偏移"工具化；
+  ② Windows 原生图标按钮 UIA 有 Name/control_type → 走 `win_*` 即可；
+  ③ 中期引入 SOM / UI 元素检测模型(如 OmniParser)给所有可点区域编号，按号点。
+- 成本：短期小、中期大。
+
+### P1 ｜ 截图"看全局 vs 看清细节"矛盾【两段式截图】
+- 优化：保留全局缩略 `screenshot`，新增 `zoom(x,y,w,h)` / `screenshot(region, full_res=true)`
+  返回指定区域原分辨率裁剪，看清小字。与 P0 的全分辨率 OCR 配套。
+- 成本：小。
+
+### P2 ｜ 多坐标系手动对齐易绕晕【工程约定】
+- 根因：复盘时手动调 mss/pyautogui，物理/逻辑/view/屏幕本地 四套坐标混用。
+- 优化：对外只暴露 view 坐标，所有换算收敛进 `desktop` 模块；**不要绕过封装层直接调原始库**。
+- 成本：约定，无代码。
+
+### P2 ｜ 脚本编码坑【工程约定】
+- 现象：bash heredoc 混 PowerShell 语法、GBK 控制台打不出 `​`/emoji，脚本崩溃。
+- 优化：脚本统一 `sys.stdout.reconfigure(encoding="utf-8")` 或 `PYTHONUTF8=1`；勿混 bash/PowerShell。
+- 成本：约定，无代码。
+
+### 落地优先级建议
+先做两个 **P0（都是小改、收益大）**：①全分辨率 OCR；②浏览器窗口路由提示。
+再做 P1 的"点后验证+重试"与 `click_relative`。SOM 元素检测作为中期大项单列。
 ```
