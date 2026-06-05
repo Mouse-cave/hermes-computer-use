@@ -75,6 +75,7 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 |---|---|
 | `screenshot` | 截当前主屏（返回图片 + 坐标系尺寸） |
 | `get_screen_info` | 坐标空间 / 真实分辨率 / 缩放比 |
+| `check_environment` | 环境自检：OS / GUI 是否可用 / OCR / 窗口管理 / 安全配置 + 结论 |
 
 **OCR（需 `[ocr]` 依赖）** —— 按文字定位，比纯猜坐标更稳
 | 工具 | 作用 |

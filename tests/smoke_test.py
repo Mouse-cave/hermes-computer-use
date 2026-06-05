@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import asyncio
 
-from hermes_computer_use import desktop, safety, window
+from hermes_computer_use import desktop, environment, safety, window
 from hermes_computer_use.config import config
 from hermes_computer_use.safety import SafetyError
 from hermes_computer_use.server import mcp
@@ -98,6 +98,15 @@ def test_safety_rate_limit() -> None:
     print(f"[OK] safety(rate): 超过 {config.rate_limit_per_min}/min 正确限速")
 
 
+def test_environment() -> None:
+    info = environment.probe()
+    assert info["gui_available"] is True, "本机有桌面，gui_available 应为 True"
+    assert info["screen"] is not None and info["verdict"]
+    assert isinstance(info["ocr_available"], bool)
+    print(f"[OK] environment: os={info['os']} gui={info['gui_available']} "
+          f"ocr={info['ocr_available']} win={info['window_management_available']}")
+
+
 def test_window() -> None:
     try:
         wins = window.list_windows()
@@ -125,7 +134,7 @@ def test_tools_registered() -> None:
     tools = asyncio.run(mcp.list_tools())
     names = {t.name for t in tools}
     expected = {
-        "screenshot", "get_screen_info", "ocr_screen", "find_text",
+        "screenshot", "get_screen_info", "check_environment", "ocr_screen", "find_text",
         "move_mouse", "click", "double_click", "right_click", "drag", "scroll",
         "type_text", "press_key", "cursor_position", "wait",
         "list_windows", "get_active_window", "activate_window",
@@ -144,6 +153,7 @@ def main() -> None:
     test_safety_text()
     test_safety_hotkey()
     test_safety_rate_limit()
+    test_environment()
     test_window()
     test_ocr()
     test_tools_registered()

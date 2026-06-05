@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP, Image
 
-from . import desktop, ocr, safety, window
+from . import desktop, environment, ocr, safety, window
 
 mcp = FastMCP("hermes-computer-use")
 
@@ -46,6 +46,13 @@ def get_screen_info() -> str:
         f"真实逻辑分辨率(logical)：{geo.logical_width}x{geo.logical_height}\n"
         f"缩放比 scale：{geo.scale:.4f}（view = logical × scale）"
     )
+
+
+@mcp.tool()
+def check_environment() -> str:
+    """环境自检（只读）：操作系统、GUI 是否可用、屏幕尺寸/缩放、OCR/窗口管理是否可用、
+    安全配置与总体结论。建议在执行桌面控制任务前先调用，用于分诊决策。"""
+    return environment.report()
 
 
 # ===========================================================================
