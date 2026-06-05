@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hermes-computer-use"
+version = "0.1.0"
+description = "适配 Hermes Agent 的跨平台 Computer Use（通用桌面控制）MCP 服务"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "hermes-computer-use" }]
+keywords = ["hermes", "mcp", "computer-use", "automation", "agent"]
+dependencies = [
+    "mcp>=1.2.0",
+    "pyautogui>=0.9.54",
+    "mss>=9.0.0",
+    "pillow>=10.0.0",
+]
+
+[project.scripts]
+# 安装后可直接用 `hermes-computer-use` 启动 MCP server（stdio）
+hermes-computer-use = "hermes_computer_use.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

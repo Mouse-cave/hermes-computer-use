@@ -1,0 +1,30 @@
+# ───────────────────────────────────────────────────────────────────────────
+# 把以下片段合并进 Hermes 的 ~/.hermes/config.yaml（Windows: %LOCALAPPDATA%\hermes\config.yaml）
+# 修改后在 Hermes 里执行 /reload-mcp 生效，或重启 Hermes。
+# 前提：已在对应 Python 环境执行 `pip install -e .` 安装本项目。
+# ───────────────────────────────────────────────────────────────────────────
+mcp_servers:
+  computer-use:
+    # 方式一（推荐）：以模块方式启动，避免 PATH 问题。
+    # 把 command 换成你安装了本项目的那个 python 解释器的绝对路径更稳妥，例如：
+    #   C:\Users\Administrator\AppData\Local\Programs\Python\Python312\python.exe
+    command: "python"
+    args: ["-m", "hermes_computer_use.server"]
+
+    # 方式二：安装后用控制台脚本（确保 Scripts 目录在 PATH 上）
+    # command: "hermes-computer-use"
+    # args: []
+
+    env:
+      HCU_MAX_WIDTH: "1280"      # 截图最大宽度；0=不缩放
+      HCU_FAILSAFE: "true"       # 鼠标甩到左上角急停
+      HCU_PAUSE: "0.1"           # 每个动作后停顿(秒)
+      HCU_TYPING_INTERVAL: "0.0" # 逐字符输入间隔(秒)，丢字就调大
+
+    enabled: true
+    timeout: 120
+    tools:
+      resources: false
+      prompts: false
+      # 如只想暴露部分工具，可用 include 白名单：
+      # include: [screenshot, click, type_text, press_key, scroll]

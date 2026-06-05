@@ -1,0 +1,5 @@
+# 运行依赖（与 pyproject.toml 保持一致）
+mcp>=1.2.0
+pyautogui>=0.9.54
+mss>=9.0.0
+pillow>=10.0.0
