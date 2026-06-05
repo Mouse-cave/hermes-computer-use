@@ -38,6 +38,10 @@ metadata:
 | `press_key` | 按键/组合键 | keys 如 `enter`、`ctrl+c` |
 | `cursor_position` | 查当前鼠标位置 | 无 |
 | `wait` | 等待加载/动画（≤30s） | seconds |
+| `find_text` | **按文字找可点击坐标**（首选定位方式） | query, exact |
+| `ocr_screen` | 识别屏幕全部文字 + 坐标 | 无 |
+| `list_windows` / `get_active_window` | 列窗口 / 查前台窗口 | 无 |
+| `activate_window` / `minimize_window` / `maximize_window` | 按标题操作窗口 | title |
 
 **坐标系铁律**：所有坐标都基于 `screenshot` 返回的那张图的像素（左上角为原点）。
 截图会告诉你画布尺寸（如 1280×720），你的 x/y 必须落在这个范围内。服务会自动
@@ -47,6 +51,8 @@ metadata:
 
 1. **先截图**：调用 `screenshot` 看清当前界面，确认坐标系尺寸。
 2. **定位目标**：在图上找到要操作的元素，读出它中心点的像素坐标。
+   - 若目标是**带文字的按钮/菜单/链接**，优先 `find_text("登录")` 直接拿到可点击坐标，比肉眼估坐标更准。
+   - 先用 `list_windows` / `activate_window` 把目标程序窗口切到前台，再操作。
 3. **执行一个动作**：`click` / `type_text` / `press_key` 等，一次只做一步。
 4. **验证**：再 `screenshot`，确认界面如预期变化（按钮按下、文本出现、弹窗关闭）。
 5. **循环**：未完成则回到第 2 步。
@@ -64,6 +70,8 @@ metadata:
 - **组合键写法**：用 `+` 连接，如 `ctrl+c`、`alt+f4`、`ctrl+shift+esc`；单键直接写 `enter`。
 - **急停**：如果操作失控，把鼠标**甩到屏幕左上角**会触发 FAILSAFE 立即中止。
 - **危险操作**：删除、提交订单、发送消息、关闭未保存窗口前，先截图确认，必要时向用户确认。
+- **被安全护栏拦截**：`type_text` 输入疑似破坏命令、或 `press_key` 命中快捷键黑名单会被拦截并返回原因；**确认安全**后可对该次调用传 `force=true` 放行。
+- **限速**：默认每分钟最多 120 个动作，触发上限说明操作太密，应放慢并多用 `find_text` 精准定位减少试错。
 
 ## 验证（Verification）
 

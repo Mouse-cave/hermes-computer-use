@@ -34,8 +34,11 @@
 ## 安装
 
 ```powershell
-# 在项目根目录
+# 在项目根目录（基础功能：截图 + 鼠标键盘 + 窗口管理 + 安全护栏）
 pip install -e .
+
+# 如需 OCR（按文字定位/点击，含 onnxruntime，体积较大）：
+pip install -e ".[ocr]"
 ```
 
 ## 接入 Hermes
@@ -67,18 +70,35 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 
 ## 工具清单
 
+**视觉 / 信息**
 | 工具 | 作用 |
 |---|---|
 | `screenshot` | 截当前主屏（返回图片 + 坐标系尺寸） |
 | `get_screen_info` | 坐标空间 / 真实分辨率 / 缩放比 |
+
+**OCR（需 `[ocr]` 依赖）** —— 按文字定位，比纯猜坐标更稳
+| 工具 | 作用 |
+|---|---|
+| `ocr_screen` | 识别屏幕全部文字 + 中心坐标（可直接 click） |
+| `find_text` | 查找指定文字，返回可点击坐标（如 `find_text("登录")`） |
+
+**鼠标 / 键盘**
+| 工具 | 作用 |
+|---|---|
 | `move_mouse` / `click` / `double_click` / `right_click` | 鼠标移动与点击 |
 | `drag` | 拖拽（拖动 / 框选 / 滑块） |
 | `scroll` | 滚轮（正=上，负=下） |
-| `type_text` | 在焦点处输入文本 |
-| `press_key` | 按键 / 组合键（`enter`、`ctrl+c`…） |
+| `type_text` | 在焦点处输入文本（含危险命令拦截，可 `force`） |
+| `press_key` | 按键 / 组合键（`enter`、`ctrl+c`…，黑名单拦截，可 `force`） |
 | `cursor_position` / `wait` | 查光标位置 / 等待加载 |
 
-**坐标系**：所有坐标基于 `screenshot` 返回图片的像素（左上角原点）。服务自动处理 DPI 与缩放，模型无需自己换算。
+**窗口管理**
+| 工具 | 作用 |
+|---|---|
+| `list_windows` / `get_active_window` | 列出窗口 / 查前台窗口 |
+| `activate_window` / `minimize_window` / `maximize_window` | 按标题激活 / 最小化 / 最大化 |
+
+**坐标系**：所有坐标基于 `screenshot`（与 OCR）返回的像素（左上角原点）。服务自动处理 DPI 与缩放，模型无需自己换算。
 
 ## 配置（环境变量）
 
@@ -89,17 +109,23 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 | `HCU_PAUSE` | `0.1` | 每个动作后的固定停顿（秒） |
 | `HCU_TYPING_INTERVAL` | `0.0` | 逐字符输入间隔（秒），丢字就调大 |
 | `HCU_MAX_ACTION_DELAY` | `30` | `wait` 工具允许的最大秒数 |
+| `HCU_SAFETY` | `true` | 安全护栏总开关，`false` 关闭以下全部检查 |
+| `HCU_RATE_LIMIT` | `120` | 每分钟动作上限，防失控循环；`0`=不限 |
+| `HCU_BLOCK_DANGEROUS_TEXT` | `true` | 拦截疑似破坏性命令的输入文本（rm -rf、DROP TABLE…） |
+| `HCU_BLOCKED_HOTKEYS` | `ctrl+alt+delete` | 危险快捷键黑名单，逗号分隔 |
 
 ## 安全须知
 
 - 这些工具会**真实操作你的电脑**。请在你掌控的机器上使用。
 - 保留 `HCU_FAILSAFE=true`：失控时把鼠标甩到**屏幕左上角**即可中止。
+- 内置安全护栏：**动作限速**（默认 120/分）、**危险输入文本拦截**（rm -rf / DROP TABLE 等）、**危险快捷键黑名单**。确认安全的单次操作可在 `type_text` / `press_key` 传 `force=true` 放行。
 - 删除、提交、发送等不可逆操作前，建议让 Hermes 先截图确认、必要时向你二次确认。
 
 ## 当前限制（MVP）
 
 - 仅操作**主显示器**（多屏支持待加）。
-- 纯坐标点击（基于视觉）；Windows 下后续可选接入 UI Automation 做更稳的「按元素」操作。
+- OCR 运行在降采样后的视图截图上，极小字体可能漏识；必要时把 `HCU_MAX_WIDTH` 调大或设 0。
+- 窗口管理依赖 pygetwindow，Windows 功能完整，macOS/Linux 支持有限（不支持时工具会返回提示）。
 - 浏览器/文件/命令行复用 Hermes 自带工具，本项目不重复造。
 
 ## 许可证

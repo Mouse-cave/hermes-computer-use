@@ -9,4 +9,4 @@ hermes-computer-use
 操作→再截图验证」的闭环。
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
