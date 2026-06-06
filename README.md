@@ -42,6 +42,15 @@
   但需各自依赖与权限（**macOS** 授权辅助功能+屏幕录制；**Linux** 需 X11，Wayland 受限），**尚未验证**。
 - **UIA 元素级后端与假鼠标 overlay 依赖 Win32 API，仅 Windows。** macOS 的"不抢鼠标"对应方案是 Hermes 官方 cua-driver（见 [docs/windows-backend-design.md](docs/windows-backend-design.md)）。
 
+### 为什么聚焦 Windows（其它平台「未测 / 未做」的原因）
+
+不是没精力，而是**分工**——Windows 恰好是 Hermes 官方留下的空白：
+
+- **Windows = Hermes 的空白，所以我们补**：Hermes 官方 Computer Use **仅 macOS**（cua-driver 用 Apple 私有 SPI，[官方文档](https://hermes-agent.nousresearch.com/docs/user-guide/features/computer-use)明确"不支持 Linux/Windows"，对 Windows 只能"改用浏览器工具"兜底）。**补这个空白正是本项目的定位**，故精力与实测都集中在 Windows。
+- **macOS 已有官方方案，不重复造**：Hermes 官方 **cua-driver** 已提供后台·不抢鼠标·元素级控制，比我们重做更完整 → 我们不在 macOS 投入/实测。
+- **Linux 已有社区方案**：[`computer-use-linux`](https://github.com/avifenesh/computer-use-linux)（AT-SPI 无障碍树）覆盖 Linux → 同理。
+- 因此：视觉核心虽库层面跨平台，但**只在 Windows 实测**；元素级 / overlay 仅 Windows。若你确有 mac/Linux 用纯视觉的需求，欢迎 PR 实测反馈。
+
 ## 前提条件
 
 - Python ≥ 3.10
