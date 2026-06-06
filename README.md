@@ -1,6 +1,9 @@
 # hermes-computer-use
 
-适配 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 的**跨平台 Computer Use（通用桌面控制）**能力，让 Hermes 能像人一样「看屏幕 + 操作鼠标键盘」，从而操作任何**没有 API 的桌面软件**。
+适配 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 的 **Computer Use（通用桌面控制）** 能力，让 Hermes 能像人一样「看屏幕 + 操作鼠标键盘」，从而操作任何**没有 API 的桌面软件**。
+
+> ⚠️ **平台说明**：视觉坐标核心（截图/鼠标键盘/OCR/窗口）库层面跨平台，但**目前仅在 Windows 实测**；
+> **UIA 元素级后端（`win_*`，不抢鼠标）与假鼠标 overlay 为 Windows 专属**。详见下方[平台支持矩阵](#平台支持矩阵)。
 
 采用 **MCP Server + Skill** 双层架构：
 
@@ -16,13 +19,28 @@
    │ mss + pyautogui      │   │ →验证」闭环         │
    └──────────┬───────────┘   └─────────────────────┘
               ▼
-       桌面 / 任意应用（Windows / macOS / Linux）
+       桌面 / 任意应用（✅ Windows 实测；🟡 macOS/Linux 视觉核心理论支持）
 ```
 
 - **MCP Server**（`src/hermes_computer_use/`）：向 Hermes 暴露原子级桌面操作工具。
 - **Skill**（`skills/desktop-automation/SKILL.md`）：教 Hermes 何时用、怎么用这些工具。
 
 > 文件/命令行、浏览器自动化，Hermes **自带工具**已基本覆盖；本项目专注补齐它缺失的**通用桌面控制**核心。
+
+## 平台支持矩阵
+
+| 能力 | Windows | macOS | Linux |
+|---|:---:|:---:|:---:|
+| 截图 / 鼠标键盘 / 滚动拖拽（视觉坐标核心）| ✅ 实测 | 🟡 库支持·未测 | 🟡 库支持·未测 |
+| OCR（`find_text`/`zoom`，需 `[ocr]`）| ✅ 实测 | 🟡 未测 | 🟡 未测 |
+| 窗口管理（`list_windows`/`activate`…）| ✅ 实测 | 🟡 有限 | 🟡 有限 |
+| **UIA 元素级（`win_*`，不抢鼠标，需 `[winuia]`）** | ✅ | ❌ | ❌ |
+| **假鼠标 overlay（`HCU_OVERLAY`）** | ✅ | ❌ | ❌ |
+
+- ✅ 实测 / 🟡 理论支持但未验证 / ❌ 不支持
+- **当前唯一实测平台 = Windows。** macOS/Linux 的视觉核心理论可用（`pyautogui`/`mss`/`rapidocr`/`pygetwindow` 均跨平台），
+  但需各自依赖与权限（**macOS** 授权辅助功能+屏幕录制；**Linux** 需 X11，Wayland 受限），**尚未验证**。
+- **UIA 元素级后端与假鼠标 overlay 依赖 Win32 API，仅 Windows。** macOS 的"不抢鼠标"对应方案是 Hermes 官方 cua-driver（见 [docs/windows-backend-design.md](docs/windows-backend-design.md)）。
 
 ## 前提条件
 
