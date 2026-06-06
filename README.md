@@ -71,32 +71,32 @@ pip install -e ".[ocr]"
 pip install -e ".[winuia]"
 ```
 
-## 接入 Hermes
+## 接入（一键，支持 Hermes / Claude）
 
-### 1) 注册 MCP 服务
-
-把 [`examples/hermes-config.yaml`](examples/hermes-config.yaml) 的片段合并进 Hermes 配置文件：
-
-- Linux/macOS：`~/.hermes/config.yaml`
-- Windows：`%LOCALAPPDATA%\hermes\config.yaml`
-
-改完在 Hermes 里执行 `/reload-mcp`（或重启）。
-
-### 2) 安装 Skill
-
-把技能目录复制到 Hermes 的 skills 目录：
-
-```powershell
-# Windows
-Copy-Item -Recurse skills\desktop-automation "$env:USERPROFILE\.hermes\skills\desktop-automation"
-```
+安装后跑**一条命令**即可自动写配置 + 装 Skills（保留你已有配置、原文件自动备份 `.bak`）：
 
 ```bash
-# Linux/macOS
-cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
+hermes-computer-use-setup                          # 接入 Hermes（默认）
+hermes-computer-use-setup --target claude-desktop  # 接入 Claude Desktop
+hermes-computer-use-setup --target claude-code     # 接入 Claude Code
+hermes-computer-use-setup --target all             # 三者全接
+hermes-computer-use-setup --print                  # 只预览不落盘(dry-run)
 ```
 
-之后让 Hermes 做需要操作界面的任务时，它会自动加载该技能并使用 computer-use 工具。
+- 自动检测各客户端配置位置、用当前 Python 解释器(`sys.executable`)、**合并写入**（不动你已有的其它 MCP/配置）。
+- 完成后：**Hermes** 执行 `/reload-mcp`；**Claude Desktop** 重启应用；**Claude Code** 即时生效。
+- 指定 Hermes 目录：`--hermes-dir <path>`。
+
+<details>
+<summary>手动接入（进阶 / 排查用）</summary>
+
+- **Hermes**：把 [`examples/hermes-config.yaml`](examples/hermes-config.yaml) 的 `mcp_servers` 片段并入
+  `~/.hermes/config.yaml`（Windows: `%LOCALAPPDATA%\hermes\config.yaml`），并把 `skills/` 下目录复制到
+  `~/.hermes/skills/`，然后 `/reload-mcp`。
+- **Claude Desktop**：把 `mcpServers.computer-use` 写入 `claude_desktop_config.json`
+  （macOS `~/Library/Application Support/Claude/`、Windows `%APPDATA%\Claude\`）。
+- **Claude Code**：`claude mcp add computer-use -- <python> -m hermes_computer_use.server`。
+</details>
 
 ## 工具清单
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hermes-computer-use"
-version = "0.4.3"
+version = "0.5.0"
 description = "适配 Hermes Agent 的 Computer Use（通用桌面控制）MCP 服务（视觉核心跨平台，UIA 元素级仅 Windows；当前实测 Windows）"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,6 +17,7 @@ dependencies = [
     "mss>=9.0.0",
     "pillow>=10.0.0",
     "pygetwindow>=0.0.9",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +31,8 @@ winuia = ["pywinauto>=0.6.8"]
 [project.scripts]
 # 安装后可直接用 `hermes-computer-use` 启动 MCP server（stdio）
 hermes-computer-use = "hermes_computer_use.server:main"
+# 一键接入 Hermes / Claude
+hermes-computer-use-setup = "hermes_computer_use.setup_hermes:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

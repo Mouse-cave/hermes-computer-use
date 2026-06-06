@@ -189,6 +189,17 @@ def test_ocr() -> None:
           (f"，示例: {items[0]['text']!r} @ {items[0]['center']}" if items else ""))
 
 
+def test_setup() -> None:
+    from pathlib import Path
+
+    from hermes_computer_use import setup_hermes
+    entry = setup_hermes._base_entry()
+    assert entry["command"] and entry["args"][:2] == ["-m", "hermes_computer_use.server"]
+    skills = setup_hermes.install_skills(Path("."), dry=True)  # dry：不写盘
+    assert "desktop-automation" in skills and "computer-use-orchestrator" in skills
+    print(f"[OK] setup: 入口+技能就绪 {skills}")
+
+
 def test_tools_registered() -> None:
     tools = asyncio.run(mcp.list_tools())
     names = {t.name for t in tools}
@@ -220,6 +231,7 @@ def main() -> None:
     test_winuia()
     test_zoom()
     test_wait_stable()
+    test_setup()
     test_targets()
     test_ocr()
     test_tools_registered()
