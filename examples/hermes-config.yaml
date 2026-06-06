@@ -4,7 +4,7 @@
 # 前提：已在对应 Python 环境执行 `pip install -e .` 安装本项目。
 # ───────────────────────────────────────────────────────────────────────────
 mcp_servers:
-  computer-use:
+  hermes-computer-use:
     # 方式一（推荐）：以模块方式启动，避免 PATH 问题。
     # 把 command 换成你安装了本项目的那个 python 解释器的绝对路径更稳妥，例如：
     #   C:\Users\Administrator\AppData\Local\Programs\Python\Python312\python.exe

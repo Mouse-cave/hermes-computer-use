@@ -93,9 +93,10 @@ hermes-computer-use-setup --print                  # 只预览不落盘(dry-run)
 - **Hermes**：把 [`examples/hermes-config.yaml`](examples/hermes-config.yaml) 的 `mcp_servers` 片段并入
   `~/.hermes/config.yaml`（Windows: `%LOCALAPPDATA%\hermes\config.yaml`），并把 `skills/` 下目录复制到
   `~/.hermes/skills/`，然后 `/reload-mcp`。
-- **Claude Desktop**：把 `mcpServers.computer-use` 写入 `claude_desktop_config.json`
+- **Claude Desktop**：把 `mcpServers.hermes-computer-use` 写入 `claude_desktop_config.json`
   （macOS `~/Library/Application Support/Claude/`、Windows `%APPDATA%\Claude\`）。
-- **Claude Code**：`claude mcp add computer-use -- <python> -m hermes_computer_use.server`。
+- **Claude Code**：`claude mcp add hermes-computer-use -- <python> -m hermes_computer_use.server`
+  （注意：`computer-use` 在 Claude Code 是保留名，必须用带前缀的名字）。
 </details>
 
 ## 工具清单
