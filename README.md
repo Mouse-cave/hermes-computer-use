@@ -78,6 +78,7 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 |---|---|
 | `targets` | 枚举可操作目标并**编号**：Windows 窗口优先 UIA 控件(不抢鼠标)，否则 OCR 文字 |
 | `tap` | 点击 #编号目标，自动回退 **UIA无光标 → 消息坐标 → 视觉坐标** |
+| `tap_until` | 点击后轮询 OCR 直到指定文字出现/消失（比固定 wait 可靠） |
 | `fill` | 往 #编号目标填文本，优先 UIA 无光标（含危险文本拦截） |
 
 **视觉 / 信息**

@@ -396,6 +396,27 @@ def tap(id: int, settle: bool = False) -> str:
 
 
 @mcp.tool()
+def tap_until(id: int, expect_text: str, appear: bool = True, timeout: float = 6.0) -> str:
+    """点击编号目标后，轮询 OCR 直到 expect_text 出现(appear=true)或消失(appear=false)或超时。
+
+    比"点击 + 固定 wait"更可靠：以**实际界面变化**为准（如点搜索→等结果文字出现）。需 OCR。
+    """
+    safety.gate()
+    import time as _t
+
+    tap_result = targets_mod.tap(id)
+    timeout = max(0.5, min(timeout, 30.0))
+    start = _t.monotonic()
+    while _t.monotonic() - start < timeout:
+        if bool(ocr.find_text(expect_text)) == appear:
+            verb = "出现" if appear else "消失"
+            return f'{tap_result} 条件满足（"{expect_text}" 已{verb}），等待 {_t.monotonic() - start:.2f}s。'
+        _t.sleep(0.4)
+    verb = "出现" if appear else "消失"
+    return f'{tap_result} 超时 {timeout:.1f}s，"{expect_text}" 仍未{verb}。'
+
+
+@mcp.tool()
 def fill(id: int, text: str, force: bool = False, settle: bool = False) -> str:
     """往 targets 的【编号目标】填文本。优先 UIA 无光标；含危险文本拦截(可 force)。
     settle=True 则填入后轮询等界面稳定。"""

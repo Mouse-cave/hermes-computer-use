@@ -199,7 +199,7 @@ def test_tools_registered() -> None:
         "list_windows", "get_active_window", "activate_window",
         "minimize_window", "maximize_window",
         "win_list_apps", "win_inspect", "win_invoke", "win_set_text", "win_capture",
-        "win_wake_accessibility", "targets", "tap", "fill", "wait_stable",
+        "win_wake_accessibility", "targets", "tap", "tap_until", "fill", "wait_stable",
         "zoom", "click_relative",
     }
     missing = expected - names
