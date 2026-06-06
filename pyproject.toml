@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hermes-computer-use"
-version = "0.5.0"
+version = "0.5.1"
 description = "适配 Hermes Agent 的 Computer Use（通用桌面控制）MCP 服务（视觉核心跨平台，UIA 元素级仅 Windows；当前实测 Windows）"
 readme = "README.md"
 requires-python = ">=3.10"

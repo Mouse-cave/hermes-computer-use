@@ -27,12 +27,23 @@ from pathlib import Path
 # 通用：MCP 服务条目（command/args/env）
 # ---------------------------------------------------------------------------
 
+# MCP 服务名（`computer-use` 在 Claude Code 里是保留名，故用带前缀的描述名）
+SERVER_NAME = "hermes-computer-use"
+
+
 def _base_entry() -> dict:
     return {
         "command": sys.executable,
         "args": ["-m", "hermes_computer_use.server"],
         "env": {"HCU_MAX_WIDTH": "1280", "HCU_FAILSAFE": "true"},
     }
+
+
+def _drop_legacy(servers: dict) -> None:
+    """清掉本脚本早期版本写入的旧名 `computer-use`（仅当它确实指向本服务）。"""
+    old = servers.get("computer-use")
+    if isinstance(old, dict) and any("hermes_computer_use.server" in str(a) for a in old.get("args", [])):
+        servers.pop("computer-use", None)
 
 
 def _repo_skills_dir() -> Path | None:
@@ -111,10 +122,12 @@ def setup_hermes(explicit_dir: str | None, dry: bool) -> None:
             data = yaml.safe_load(f) or {}
     entry = _base_entry()
     entry.update({"enabled": True, "timeout": 120})
-    data.setdefault("mcp_servers", {})["computer-use"] = entry
+    data.setdefault("mcp_servers", {})
+    _drop_legacy(data["mcp_servers"])
+    data["mcp_servers"][SERVER_NAME] = entry
     skills = install_skills(home / "skills", dry)
     if dry:
-        print(yaml.safe_dump({"mcp_servers": {"computer-use": entry}},
+        print(yaml.safe_dump({"mcp_servers": {SERVER_NAME: entry}},
                              allow_unicode=True, sort_keys=False))
         print(f"  将装 Skills：{skills or '(未找到 skills/)'}")
         return
@@ -152,9 +165,11 @@ def setup_claude_desktop(dry: bool) -> None:
             data = json.loads(p.read_text(encoding="utf-8") or "{}")
         except json.JSONDecodeError:
             data = {}
-    data.setdefault("mcpServers", {})["computer-use"] = _base_entry()
+    data.setdefault("mcpServers", {})
+    _drop_legacy(data["mcpServers"])
+    data["mcpServers"][SERVER_NAME] = _base_entry()
     if dry:
-        print(json.dumps({"mcpServers": {"computer-use": _base_entry()}},
+        print(json.dumps({"mcpServers": {SERVER_NAME: _base_entry()}},
                          ensure_ascii=False, indent=2))
         return
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -172,7 +187,7 @@ def setup_claude_code(dry: bool) -> None:
     import subprocess
 
     claude = shutil.which("claude")
-    cmd = ["claude", "mcp", "add", "computer-use", "--scope", "user",
+    cmd = ["claude", "mcp", "add", SERVER_NAME, "--scope", "user",
            "--env", "HCU_MAX_WIDTH=1280", "--env", "HCU_FAILSAFE=true",
            "--", sys.executable, "-m", "hermes_computer_use.server"]
     print("[Claude Code]")
@@ -184,7 +199,11 @@ def setup_claude_code(dry: bool) -> None:
         print(f"  将装 Skills 到 ~/.claude/skills：{skills or '(未找到 skills/)'}")
         return
     try:
-        subprocess.run(cmd, check=True)
+        # Windows 上 `claude` 多为 .cmd 包装，需经 shell 执行；其它平台直接调
+        if sys.platform == "win32":
+            subprocess.run(subprocess.list2cmdline(cmd), check=True, shell=True)
+        else:
+            subprocess.run(cmd, check=True)
         print("  ✅ 已通过 `claude mcp add` 注册")
     except Exception as exc:  # noqa: BLE001
         print(f"  ❌ `claude mcp add` 失败：{exc}\n  可手动执行：{' '.join(cmd)}")
