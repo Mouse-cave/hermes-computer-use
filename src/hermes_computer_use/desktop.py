@@ -112,6 +112,32 @@ def capture_native() -> tuple["PILImage.Image", ScreenGeometry]:
     return img, geo
 
 
+def capture_region_fullres(view_x: int, view_y: int, view_w: int = 220, view_h: int = 160) -> bytes:
+    """以 view 坐标 (view_x, view_y) 为中心、view 尺寸 view_w×view_h 的区域，返回**原分辨率**裁剪 PNG。
+
+    用于"放大看清小字/图标"——坐标仍用截图(view)坐标，内部换算到屏幕物理区域抓原图。
+    """
+    geo = get_geometry()
+    # view 中心+尺寸 → view 左上角 → 屏幕(logical)坐标与尺寸
+    lx0 = geo.origin_x + (view_x - view_w / 2) / geo.scale
+    ly0 = geo.origin_y + (view_y - view_h / 2) / geo.scale
+    lw = max(1, view_w / geo.scale)
+    lh = max(1, view_h / geo.scale)
+    # 夹紧到当前桌面范围
+    lx0 = min(max(lx0, geo.origin_x), geo.origin_x + geo.logical_width - 1)
+    ly0 = min(max(ly0, geo.origin_y), geo.origin_y + geo.logical_height - 1)
+    lw = min(lw, geo.origin_x + geo.logical_width - lx0)
+    lh = min(lh, geo.origin_y + geo.logical_height - ly0)
+    region = {"left": int(round(lx0)), "top": int(round(ly0)),
+              "width": int(round(lw)), "height": int(round(lh))}
+    with mss.mss() as sct:
+        raw = sct.grab(region)
+    img = PILImage.frombytes("RGB", raw.size, raw.rgb)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
 def capture_png() -> tuple[bytes, ScreenGeometry]:
     """抓取主屏并编码为 PNG（已对齐到 view 空间）。返回 (png_bytes, 几何信息)。"""
     img, geo = capture_native()

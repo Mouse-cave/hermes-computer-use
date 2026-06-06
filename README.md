@@ -86,12 +86,14 @@ cp -r skills/desktop-automation ~/.hermes/skills/desktop-automation
 | `screenshot` | 截当前主屏（返回图片 + 坐标系尺寸） |
 | `get_screen_info` | 坐标空间 / 真实分辨率 / 缩放比 |
 | `check_environment` | 环境自检：OS / GUI 是否可用 / OCR / 窗口管理 / 安全配置 + 结论 |
+| `zoom` | 某区域**原分辨率**放大，看清小字/图标 |
 
 **OCR（需 `[ocr]` 依赖）** —— 按文字定位，比纯猜坐标更稳
 | 工具 | 作用 |
 |---|---|
 | `ocr_screen` | 识别屏幕全部文字 + 中心坐标（可直接 click） |
 | `find_text` | 查找指定文字，返回可点击坐标（如 `find_text("登录")`） |
+| `click_relative` | 锚文字+偏移点击**无文字图标**（如头像在某文字右侧 +40） |
 
 **鼠标 / 键盘**
 | 工具 | 作用 |

@@ -39,6 +39,16 @@ def screenshot() -> list:
 
 
 @mcp.tool()
+def zoom(x: int, y: int, w: int = 220, h: int = 160) -> list:
+    """放大查看：返回以截图(view)坐标 (x,y) 为中心、view 尺寸 w×h 区域的【原分辨率】裁剪图。
+
+    用于看清小字/图标（弥补整屏截图被降采样后看不清的问题）。坐标仍用截图(view)坐标。
+    """
+    png = desktop.capture_region_fullres(x, y, w, h)
+    return [f"放大区域：view 中心({x},{y})，{w}×{h}（原分辨率）", Image(data=png, format="png")]
+
+
+@mcp.tool()
 def get_screen_info() -> str:
     """获取屏幕几何信息：模型坐标空间尺寸、真实逻辑分辨率、缩放比。"""
     geo = desktop.get_geometry()
@@ -87,6 +97,26 @@ def find_text(query: str, exact: bool = False) -> str:
         cx, cy = it["center"]
         lines.append(f'- "{it["text"]}"  @({cx},{cy})  score={it["score"]}')
     return "\n".join(lines)
+
+
+@mcp.tool()
+def click_relative(anchor_text: str, dx: int = 0, dy: int = 0,
+                   occurrence: int = 1, settle: bool = False) -> str:
+    """先用 OCR 找到锚文字，再在其中心**偏移 (dx,dy)** 处点击——用于定位**无文字的图标**。
+
+    例：账号头像在「English」文字右侧约 +40px → click_relative("English", dx=40, dy=0)。
+    occurrence=用第几个匹配(按置信度，从 1 起)。坐标/偏移均为截图(view)像素。
+    """
+    safety.gate()
+    matches = ocr.find_text(anchor_text)
+    if not matches:
+        raise RuntimeError(f'未找到锚文字 "{anchor_text}"，无法相对定位。')
+    idx = occurrence - 1 if 1 <= occurrence <= len(matches) else 0
+    cx, cy = matches[idx]["center"]
+    tx, ty = cx + dx, cy + dy
+    lx, ly = desktop.click(tx, ty)
+    return (f'已在锚"{anchor_text}"中心({cx},{cy})偏移({dx},{dy}) → view({tx},{ty}) 点击。'
+            + _settle_suffix(settle))
 
 
 # ===========================================================================

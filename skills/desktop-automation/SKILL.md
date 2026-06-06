@@ -39,6 +39,8 @@ metadata:
 | `cursor_position` | 查当前鼠标位置 | 无 |
 | `wait` | 等待加载/动画（≤30s） | seconds |
 | `find_text` | **按文字找可点击坐标**（首选定位方式） | query, exact |
+| `click_relative` | 锚文字+偏移点击**无文字图标**（如头像在某文字右侧） | anchor_text, dx, dy |
+| `zoom` | 某区域**原分辨率**放大，看清小字/图标 | x, y, w, h |
 | `ocr_screen` | 识别屏幕全部文字 + 坐标 | 无 |
 | `list_windows` / `get_active_window` | 列窗口 / 查前台窗口 | 无 |
 | `activate_window` / `minimize_window` / `maximize_window` | 按标题操作窗口 | title |

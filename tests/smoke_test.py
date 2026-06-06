@@ -143,6 +143,13 @@ def test_winuia() -> None:
     print(f"[OK] winuia: {out}")
 
 
+def test_zoom() -> None:
+    geo = desktop.get_geometry()
+    png = desktop.capture_region_fullres(geo.view_width // 2, geo.view_height // 2, 200, 150)
+    assert png[:8] == b"\x89PNG\r\n\x1a\n" and len(png) > 200, "zoom 区域截图应为合法 PNG"
+    print(f"[OK] zoom: 区域原分辨率截图 {len(png)}B PNG")
+
+
 def test_wait_stable() -> None:
     import time as _t
     t = _t.perf_counter()
@@ -193,6 +200,7 @@ def test_tools_registered() -> None:
         "minimize_window", "maximize_window",
         "win_list_apps", "win_inspect", "win_invoke", "win_set_text", "win_capture",
         "win_wake_accessibility", "targets", "tap", "fill", "wait_stable",
+        "zoom", "click_relative",
     }
     missing = expected - names
     assert not missing, f"缺少工具：{missing}"
@@ -210,6 +218,7 @@ def main() -> None:
     test_environment()
     test_window()
     test_winuia()
+    test_zoom()
     test_wait_stable()
     test_targets()
     test_ocr()
